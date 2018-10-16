@@ -7,9 +7,7 @@ const router = express.Router();
 const done = (err, response) => {
   if (err) {
     console.log(err);
-    response.json({
-      success: false
-    });
+    response.status(500).json({ error: true });
   } else {
     response.json({
       success: true
@@ -136,7 +134,30 @@ router.post('/getLists/', (req, res, next) => {
     });
 });
 
-router.delete('/deleteWords', (req, res, next) => {});
+router.delete('/deleteWords', (req, res, next) => {
+  LanguagePair.updateMany(
+    {},
+    { $pull: { wordList: { _id: req.body.wordPairId } } },
+    { multi: true },
+    (err, data) => {
+      if (err || data.nModified < 1) {
+        return res.status(500).json({ error: true });
+      }
+      res.json(data);
+    }
+  );
+});
+
+router.delete('/deleteList', (req, res, next) => {
+  LanguagePair.findByIdAndRemove(req.body.languagePairId, (err, result) => {
+    if (err || result === null) {
+      return res.status(500).json({ error: true });
+    }
+    res.json({
+      success: true
+    });
+  });
+});
 
 router.post('/login', (req, res, next) => {});
 
