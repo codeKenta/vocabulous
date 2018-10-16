@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const db = mongoose.connection;
 const path = require('path');
 const bodyParser = require('body-parser');
-const testApi = require('./api/apiTest');
+const api = require('./api');
 
 const port = process.env.PORT || '3005';
 server.set('port', port);
@@ -34,23 +34,10 @@ server.use(function(req, res, next) {
   next();
 });
 
-// ****
-
-// app.use((req, res, next) => {
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header(
-//     'Access-Control-Allow-Headers',
-//     'Origin, X-Requested-With, Content-Type, Accept'
-//   );
-//   if (req.method === 'Options') {
-//     res.header('Access-Control-Allow-Methods', 'PUT, POST, DELETE');
-//     return res.status(200).json({});
-//   }
-// });
 server.use(express.static(path.join(__dirname, '../client/build')));
 
 // Routes
-server.use('/api/testApi', testApi);
+server.use('/api', api);
 
 server.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
