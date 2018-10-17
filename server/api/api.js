@@ -1,7 +1,6 @@
 const express = require('express');
 const _ = require('lodash');
-const User = require('../models/User');
-const LanguagePair = require('../models/LanguagePair');
+const LanguagePair = require('../database/models/LanguagePair');
 const router = express.Router();
 
 const done = (err, response) => {
@@ -14,11 +13,6 @@ const done = (err, response) => {
     });
   }
 };
-
-router.post('/addUser', (req, res, next) => {
-  newUser = new User(req.body);
-  newUser.save(done(err, res));
-});
 
 router.post('/addWords', (req, res, next) => {
   const newWordPair = {
@@ -158,9 +152,5 @@ router.delete('/deleteList', (req, res, next) => {
     });
   });
 });
-
-router.post('/login', (req, res, next) => {});
-
-router.get('/logout', (req, res, next) => {});
 
 module.exports = router;

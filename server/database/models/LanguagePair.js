@@ -1,7 +1,7 @@
-const mongoose = require('mongoose'),
-  Schema = mongoose.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const LanguagePairSchema = new Schema({
+const languagePairSchema = new Schema({
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   lang1Prefix: String,
   lang2Prefix: String,
@@ -14,4 +14,4 @@ const LanguagePairSchema = new Schema({
   ]
 });
 
-module.exports = mongoose.model('LanguagePair', LanguagePairSchema);
+module.exports = mongoose.model('LanguagePair', languagePairSchema);
