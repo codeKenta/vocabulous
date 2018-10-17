@@ -2,28 +2,38 @@
 require('dotenv').config();
 const express = require('express');
 const server = express();
-const mongoose = require('mongoose');
-const db = mongoose.connection;
+const dbConnection = require('./database');
 const path = require('path');
 const bodyParser = require('body-parser');
-const api = require('./api');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+const passport = require('passport');
+const api = require('./api/api');
+const usersApi = require('./api/users');
 
 const port = process.env.PORT || '3005';
 server.set('port', port);
 
-// Database
-mongoose.connect(process.env.DB_CONNECTION_STRING);
-mongoose.set('useCreateIndex', true);
-db.on('error', console.error.bind(console, 'connection error'));
-db.once('open', () => {
-  console.log('* DB CONNECTED *');
-});
+/*-*-*-*-*-*-*-*-*-*-*
+ * M i d d l w a r e s
+ *-*-*-*-*-*-*-*-*-*-*/
+server.use(
+  session({
+    secret: 'volo-voco-bulo-lush-ious',
+    resave: false,
+    store: new MongoStore({ mongooseConnection: dbConnection }),
+    saveUninitialized: false
+  })
+);
+
+// Passport
+server.use(passport.initialize());
+server.use(passport.session());
+require('./passport')(passport);
 
 // Body-parser
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: false }));
-
-// PROBABLY UNNECESSARY
 
 server.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -36,8 +46,11 @@ server.use(function(req, res, next) {
 
 server.use(express.static(path.join(__dirname, '../client/build')));
 
-// Routes
+/*-*-*-*-*-*-*-*
+ * R o u t e s
+ *-*-*-*-*-*-*/
 server.use('/api', api);
+server.use('/users', usersApi);
 
 server.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/build/index.html'));
