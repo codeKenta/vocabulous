@@ -1,64 +1,76 @@
-const express = require('express');
-const User = require('../database/models/User');
+const express = require("express");
+const User = require("../database/models/User");
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
-router.post('/register', (req, res, next) => {
+router.post("/signup", (req, res, next) => {
   const newUser = new User({
     username: req.body.username.toLowerCase(),
-    password: req.body.password
+    password: req.body.password,
+    defaultLanguages: {
+      lang1: req.body.lang1,
+      lang2: req.body.lang2
+    }
   });
 
   User.addUser(newUser, (err, user) => {
     if (err) {
       console.log(err);
-      res.json({
+      const errMsg = {
         success: false,
-        msg: 'The application failed to register the user'
-      });
+        errorMsg: {
+          username: err.errors.username ? "Username already exists" : null
+        }
+      };
+      res.json(errMsg);
     } else {
-      console.log(user);
-      res.json({ success: true, msg: 'User registration complete' });
+      const token = signToken(user);
+
+      token
+        ? res.json(token)
+        : res.json({
+            success: false,
+            errorMsg: "Login attemp failed. Please login manually."
+          });
     }
   });
 });
 
-router.post('/authenticate', (req, res, next) => {
-  console.log(req.body);
-
+router.post("/authenticate", (req, res, next) => {
   const username = req.body.username.toLowerCase();
   const password = req.body.password;
 
   User.findOne({ username: username }, (err, user) => {
     if (err) throw err;
     if (!user) {
-      return res.json({ success: false, msg: 'User not found' });
+      res.json({
+        success: false,
+        errorMsg: "Wrong password or username"
+      });
     }
 
     User.comparePassword(password, user.password, (err, isMatch) => {
       if (err) throw err;
       if (isMatch) {
-        const token = jwt.sign({ data: user }, '6laxarienlaxask', {
-          expiresIn: 604800
-        });
-
-        res.json({
-          success: true,
-          token: 'JWT ' + token,
-          user: {
-            id: user._id,
-            username: user.username
-          }
-        });
+        const token = signToken(user);
+        token
+          ? res.json(token)
+          : res.json({
+              success: false,
+              errorMsg: "Something went wrong. Please login again."
+            });
       } else {
-        return res.json({ success: false, msg: 'Wrong password or username' });
+        return res.json({
+          success: false,
+          errorMsg: "Wrong password or username"
+        });
       }
     });
   });
 });
 
-router.post('/update-password', (req, res, next) => {
+router.post("/update-password", (req, res, next) => {
   const userId = req.body.userId;
   const oldPassword = req.body.oldPassword;
   const newPassword = req.body.newPassword;
@@ -75,42 +87,69 @@ router.post('/update-password', (req, res, next) => {
             if (err) throw err;
             return res.json({
               success: true,
-              msg: 'Password was successfully updated'
+              msg: "Password was successfully updated"
             });
           });
         });
       } else {
-        return res.json({ success: false, msg: 'Wrong password' });
+        return res.json({ success: false, msg: "Wrong password" });
       }
     });
   });
 });
 
-router.get('/logout', (req, res, next) => {
+router.get("/logout", (req, res, next) => {
   if (req.user) {
     req.logout();
-    res.send({ msg: 'logging out' });
+    res.send({ msg: "logging out" });
   } else {
-    res.send({ msg: 'no user to log out' });
+    res.send({ msg: "no user to log out" });
   }
 });
 
-router.delete('/removeAccount', (req, res, next) => {
+router.delete("/removeAccount", (req, res, next) => {
   const userId = req.body.userId;
 
   User.findOneAndDelete(userId, err => {
     if (err) {
       res.send(err);
     } else {
-      res.json({ success: true, msg: 'User removed' });
+      res.json({ success: true, msg: "User removed" });
     }
   });
 
   /* 
 
   ALSO REMOVE OTHER DOCUMENTS CONNECTED TO THE USER
+
+
+  ----
+
+  -----
   
   */
 });
+
+/* Helper functions */
+
+const signToken = user => {
+  const token = jwt.sign({ data: user }, "6laxarienlaxask", {
+    expiresIn: 604800
+  });
+
+  if (user._id && user.username && user.defaultLanguages) {
+    return {
+      success: true,
+      token: "JWT " + token,
+      user: {
+        id: user._id,
+        username: user.username,
+        defaultLanguages: user.defaultLanguages
+      }
+    };
+  } else {
+    return false;
+  }
+};
 
 module.exports = router;
