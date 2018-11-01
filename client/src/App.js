@@ -1,4 +1,8 @@
 import React, { Component } from "react";
+// import { Router, Route } from "react-router-dom";
+import { connect } from "react-redux";
+// import { alertActions } from "./store/actions/alerts.actions";
+
 import LoginForm from "./forms/Login/Login";
 import Signup from "./forms/Signup/Signup";
 
@@ -14,4 +18,11 @@ class App extends Component {
   }
 }
 
-export default App;
+function mapStateToProps(state) {
+  const { alert } = state;
+  return {
+    alert
+  };
+}
+
+export default connect(mapStateToProps)(App);
